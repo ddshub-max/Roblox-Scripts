@@ -54,14 +54,14 @@ local autoFarmActive = false
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Finz Script | Event Hub",
+    Name = "Boss Script | Event Hub",
     LoadingTitle = "Checking Whitelist Success...",
     LoadingSubtitle = "Welcome, " .. player.DisplayName,
     ConfigurationSaving = {
         Enabled = false
     },
     KeySystem = false, 
-    Theme = "Default"
+    Theme = "Ocean"
 })
 
 --================================================================
