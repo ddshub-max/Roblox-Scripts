@@ -5,16 +5,12 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local whitelistURL = "https://pastebin.com/raw/fSuaeaUp"
 
--- Mengambil data whitelist dari GitHub
 local success, whitelist = pcall(function()
     return loadstring(game:HttpGet(whitelistURL))()
 end)
 
--- Validasi Akses
 if success and type(whitelist) == "table" then
     local hasAccess = false
-    
-    -- Cek apakah UserID ada di dalam tabel (baik sebagai value atau key)
     if whitelist[player.UserId] then
         hasAccess = true
     else
@@ -31,14 +27,13 @@ if success and type(whitelist) == "table" then
         return
     end
 else
-    warn("Gagal memproses whitelist. Pastikan format file di GitHub benar.")
+    warn("Gagal memproses whitelist.")
     return
 end
 
 --================================================================ 
--- SETTINGS & VARIABLES (JIKA LOLOS WHITELIST)
+-- SETTINGS & VARIABLES
 --================================================================
-local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
 local character = player.Character or player.CharacterAdded:Wait()
@@ -49,25 +44,23 @@ local RHYTHM_DELAY = 1
 local autoFarmActive = false
 
 --================================================================
--- LOAD RAYFIELD LIBRARY
+-- LOAD FLUENT LIBRARY (ACRYLIC STYLE)
 --================================================================
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local Window = Rayfield:CreateWindow({
-    Name = "Boss Script | Event Hub",
-    LoadingTitle = "Checking Whitelist Success...",
-    LoadingSubtitle = "Welcome, " .. player.DisplayName,
-    ConfigurationSaving = {
-        Enabled = false
-    },
-    KeySystem = false, 
-    Theme = "Ocean"
+local Window = Fluent:CreateWindow({
+    Title = "Boss Script | Event Hub",
+    SubTitle = "by BOSS",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true, -- EFEK TRANSPARAN BLUR
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 --================================================================
 -- UTILS / HELPER FUNCTIONS
 --================================================================
-
 local function getTargetPart(obj)
     if not obj then return nil end
     if obj:IsA("Model") then
@@ -82,13 +75,9 @@ local function getNearestAngpao()
     local eventFolder = workspace:FindFirstChild("Event")
     local angpaoFolder = eventFolder and eventFolder:FindFirstChild("AngpaoFolder")
     if not angpaoFolder then return nil end
-    
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
-    
-    local nearest = nil
-    local shortest = math.huge
-    
+    local nearest, shortest = nil, math.huge
     for _, obj in ipairs(angpaoFolder:GetChildren()) do
         if string.find(obj.Name, "Angpao") then
             local part = getTargetPart(obj)
@@ -104,30 +93,20 @@ local function getNearestAngpao()
     return nearest
 end
 
---================================================================
--- CORE LOGIC
---================================================================
-
 local function startAutoFarm()
     if _G.LoopRunning then return end
     _G.LoopRunning = true
-
     while autoFarmActive do
         local target = getNearestAngpao()
         if target then
-            local modelCFrame = target:GetPivot()
-            character:PivotTo(modelCFrame + Vector3.new(0, SAFE_HEIGHT_OFFSET, 0))
-            
+            character:PivotTo(target:GetPivot() + Vector3.new(0, SAFE_HEIGHT_OFFSET, 0))
             task.wait(RHYTHM_DELAY)
-            
             if not autoFarmActive then break end
-            if target and target.Parent then
-                local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
-                if prompt then
-                    prompt.HoldDuration = 0
-                    prompt.RequiresLineOfSight = false
-                    fireproximityprompt(prompt)
-                end
+            local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
+            if prompt then
+                prompt.HoldDuration = 0
+                prompt.RequiresLineOfSight = false
+                fireproximityprompt(prompt)
             end
             task.wait(RHYTHM_DELAY)
         else
@@ -138,74 +117,58 @@ local function startAutoFarm()
 end
 
 --================================================================
--- RAYFIELD TABS & ELEMENTS
+-- TABS & ELEMENTS
 --================================================================
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm", Icon = "home" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
+}
 
-local MainTab = Window:CreateTab("🏠 Main Farm")
+-- SECTION: EVENT
+Tabs.Main:AddSection("Event Automation")
 
-MainTab:CreateSection("Event Automation")
+local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Angpao", Default = false })
 
-local AutoFarmToggle = MainTab:CreateToggle({
-    Name = "Auto Farm Angpao",
-    CurrentValue = false,
-    Flag = "AutoFarmFlag", 
-    Callback = function(Value)
-        autoFarmActive = Value
-        if autoFarmActive then
-            Rayfield:Notify({Title = "Auto Farm", Content = "Auto Farm AKTIF!", Duration = 3})
-            task.spawn(startAutoFarm)
-        else
-            Rayfield:Notify({Title = "Auto Farm", Content = "Auto Farm NONAKTIF!", Duration = 3})
-        end
-    end,
-})
+AutoFarmToggle:OnChanged(function()
+    autoFarmActive = Fluent.Options.AutoFarm.Value
+    if autoFarmActive then
+        Fluent:Notify({Title = "Auto Farm", Content = "Aktif!", Duration = 3})
+        task.spawn(startAutoFarm)
+    else
+        Fluent:Notify({Title = "Auto Farm", Content = "Nonaktif!", Duration = 3})
+    end
+end)
 
-MainTab:CreateSection("Teleports")
+-- SECTION: TELEPORTS
+Tabs.Main:AddSection("Teleports")
 
-MainTab:CreateButton({
-    Name = "TP Event NPC",
+Tabs.Main:AddButton({
+    Title = "TP Event NPC",
     Callback = function()
         local npc = workspace:FindFirstChild("Event") and workspace.Event:FindFirstChild("EventNPC")
-        if npc then
-            character:PivotTo(npc:GetPivot() * CFrame.new(0, SAFE_HEIGHT_OFFSET, 0))
-        end
-    end,
+        if npc then character:PivotTo(npc:GetPivot() * CFrame.new(0, SAFE_HEIGHT_OFFSET, 0)) end
+    end
 })
 
-MainTab:CreateButton({
-    Name = "TP KeyMaster NPC",
+Tabs.Main:AddButton({
+    Title = "TP KeyMaster NPC",
     Callback = function()
         local npc = workspace:FindFirstChild("Event") and workspace.Event:FindFirstChild("KeymasterNPC")
-        if npc then
-            character:PivotTo(npc:GetPivot() * CFrame.new(0, SAFE_HEIGHT_OFFSET, 0))
-        end
-    end,
+        if npc then character:PivotTo(npc:GetPivot() * CFrame.new(0, SAFE_HEIGHT_OFFSET, 0)) end
+    end
 })
 
-MainTab:CreateButton({
-    Name = "TP Nearest Angpao (Manual)",
-    Callback = function()
-        local target = getNearestAngpao()
-        if target then
-            character:PivotTo(target:GetPivot() + Vector3.new(0, SAFE_HEIGHT_OFFSET, 0))
-        end
-    end,
-})
-
-local MiscTab = Window:CreateTab("⚙️ Misc")
-
-MiscTab:CreateButton({
-    Name = "Load Infinite Yield",
+-- MISC TAB
+Tabs.Misc:AddButton({
+    Title = "Load Infinite Yield",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-    end,
+    end
 })
 
 --================================================================
 -- EXTRA UPDATES
 --================================================================
-
--- Anti Void
 RunService.Heartbeat:Connect(function()
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if hrp and hrp.Position.Y < VOID_Y_LIMIT then
@@ -214,12 +177,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-player.CharacterAdded:Connect(function(char)
-    character = char
-end)
+player.CharacterAdded:Connect(function(char) character = char end)
 
-Rayfield:Notify({
+Window:SelectTab(1)
+Fluent:Notify({
     Title = "Script Ready!",
-    Content = "Tekan G untuk menyembunyikan menu.",
+    Content = "Menu berhasil dimuat dengan efek Acrylic.",
     Duration = 5
 })
