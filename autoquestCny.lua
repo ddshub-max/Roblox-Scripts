@@ -27,7 +27,7 @@ if success and type(whitelist) == "table" then
     end
 
     if not hasAccess then
-        player:Kick("\n[ACCESS DENIED]\nUserID: " .. player.UserId .. "\nKamu tidak terdaftar di database Finz Script.")
+        player:Kick(""\nKamu tidak terdaftar di database BOSS Script.")
         return
     end
 else
