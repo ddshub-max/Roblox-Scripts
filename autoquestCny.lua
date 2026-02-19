@@ -27,7 +27,7 @@ if success and type(whitelist) == "table" then
     end
 
     if not hasAccess then
-        player:Kick("\nKamu tidak terdaftar di database BOSS Script.")
+        player:Kick("Kamu tidak terdaftar di database BOSS Script.")
         return
     end
 else
