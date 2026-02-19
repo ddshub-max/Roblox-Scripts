@@ -3,7 +3,7 @@
 --================================================================
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local whitelistURL = "https://raw.githubusercontent.com/ddshub-max/Roblox-Scripts/refs/heads/main/whitelist.lua"
+local whitelistURL = "https://pastebin.com/raw/fSuaeaUp"
 
 -- Mengambil data whitelist dari GitHub
 local success, whitelist = pcall(function()
