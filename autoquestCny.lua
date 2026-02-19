@@ -1,13 +1,46 @@
 --================================================================ 
--- SETTINGS & VARIABLES
+-- WHITELIST LOADER (ONLINE CHECK)
 --================================================================
-
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local whitelistURL = "https://raw.githubusercontent.com/ddshub-max/Roblox-Scripts/refs/heads/main/whitelist.lua"
+
+-- Mengambil data whitelist dari GitHub
+local success, whitelist = pcall(function()
+    return loadstring(game:HttpGet(whitelistURL))()
+end)
+
+-- Validasi Akses
+if success and type(whitelist) == "table" then
+    local hasAccess = false
+    
+    -- Cek apakah UserID ada di dalam tabel (baik sebagai value atau key)
+    if whitelist[player.UserId] then
+        hasAccess = true
+    else
+        for _, id in pairs(whitelist) do
+            if id == player.UserId then
+                hasAccess = true
+                break
+            end
+        end
+    end
+
+    if not hasAccess then
+        player:Kick("\n[ACCESS DENIED]\nUserID: " .. player.UserId .. "\nKamu tidak terdaftar di database Finz Script.")
+        return
+    end
+else
+    warn("Gagal memproses whitelist. Pastikan format file di GitHub benar.")
+    return
+end
+
+--================================================================ 
+-- SETTINGS & VARIABLES (JIKA LOLOS WHITELIST)
+--================================================================
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local workspace = game:GetService("Workspace")
-
-local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local SAFE_HEIGHT_OFFSET = 3
@@ -22,13 +55,13 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
     Name = "Finz Script | Event Hub",
-    LoadingTitle = "Auto Quest Hub",
-    LoadingSubtitle = "By Finz",
+    LoadingTitle = "Checking Whitelist Success...",
+    LoadingSubtitle = "Welcome, " .. player.DisplayName,
     ConfigurationSaving = {
         Enabled = false
     },
     KeySystem = false, 
-    Theme = "Default" -- Kamu bisa ganti ke 'Dark', 'Ocean', dll
+    Theme = "Default"
 })
 
 --================================================================
