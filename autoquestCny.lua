@@ -1,34 +1,50 @@
 --================================================================ 
+-- CONFIGURATION (PENGATURAN)
+--================================================================
+local CONFIG = {
+    useWhitelist = false, -- Ubah ke 'false' jika ingin mematikan sistem whitelist
+    whitelistURL = "https://pastebin.com/raw/fSuaeaUp", -- Link Pastebin daftar UserID
+    scriptTitle = "Boss Script | Event Hub",
+    scriptSubTitle = "by BOSS",
+    theme = "Dark"
+}
+
+--================================================================ 
 -- WHITELIST LOADER (ONLINE CHECK)
 --================================================================
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local whitelistURL = "https://pastebin.com/raw/fSuaeaUp"
 
-local success, whitelist = pcall(function()
-    return loadstring(game:HttpGet(whitelistURL))()
-end)
+if CONFIG.useWhitelist then
+    local success, whitelist = pcall(function()
+        return loadstring(game:HttpGet(CONFIG.whitelistURL))()
+    end)
 
-if success and type(whitelist) == "table" then
-    local hasAccess = false
-    if whitelist[player.UserId] then
-        hasAccess = true
-    else
-        for _, id in pairs(whitelist) do
-            if id == player.UserId then
-                hasAccess = true
-                break
+    if success and type(whitelist) == "table" then
+        local hasAccess = false
+        
+        -- Cek jika UserId ada di dalam tabel (baik sebagai key maupun value)
+        if whitelist[player.UserId] then
+            hasAccess = true
+        else
+            for _, id in pairs(whitelist) do
+                if id == player.UserId then
+                    hasAccess = true
+                    break
+                end
             end
         end
-    end
 
-    if not hasAccess then
-        player:Kick("Kamu tidak terdaftar di database BOSS Script.")
+        if not hasAccess then
+            player:Kick("Kamu tidak terdaftar di database BOSS Script.")
+            return
+        end
+    else
+        warn("Gagal memproses whitelist. Pastikan link Pastebin benar dan formatnya tabel.")
         return
     end
 else
-    warn("Gagal memproses whitelist.")
-    return
+    print("Whitelist dinonaktifkan. Memuat script...")
 end
 
 --================================================================ 
@@ -49,12 +65,12 @@ local autoFarmActive = false
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Boss Script | Event Hub",
-    SubTitle = "by BOSS",
+    Title = CONFIG.scriptTitle,
+    SubTitle = CONFIG.scriptSubTitle,
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true, -- EFEK TRANSPARAN BLUR
-    Theme = "Dark",
+    Acrylic = true, 
+    Theme = CONFIG.theme,
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
@@ -77,6 +93,7 @@ local function getNearestAngpao()
     if not angpaoFolder then return nil end
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
+    
     local nearest, shortest = nil, math.huge
     for _, obj in ipairs(angpaoFolder:GetChildren()) do
         if string.find(obj.Name, "Angpao") then
@@ -101,7 +118,9 @@ local function startAutoFarm()
         if target then
             character:PivotTo(target:GetPivot() + Vector3.new(0, SAFE_HEIGHT_OFFSET, 0))
             task.wait(RHYTHM_DELAY)
+            
             if not autoFarmActive then break end
+            
             local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
             if prompt then
                 prompt.HoldDuration = 0
@@ -167,7 +186,7 @@ Tabs.Misc:AddButton({
 })
 
 --================================================================
--- EXTRA UPDATES
+-- EXTRA UPDATES & SAFEGUARDS
 --================================================================
 RunService.Heartbeat:Connect(function()
     local hrp = character:FindFirstChild("HumanoidRootPart")
@@ -177,7 +196,9 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-player.CharacterAdded:Connect(function(char) character = char end)
+player.CharacterAdded:Connect(function(char) 
+    character = char 
+end)
 
 Window:SelectTab(1)
 Fluent:Notify({
